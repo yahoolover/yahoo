@@ -67,25 +67,45 @@
       margin-top: 6px;
     }
 
-    /* Result image fits screen */
     .imgbox {
       flex: 1;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
       overflow: hidden;
+      gap: 8px;
     }
 
     .imgbox img {
       max-width: 100%;
-      max-height: 75vh;
+      max-height: 73vh;
       height: auto;
       width: auto;
       border-radius: 10px;
       border: 1px solid #e5e5e5;
+      background: #fff;
     }
 
-    /* Chart image fits screen */
+    .status {
+      font-size: 12px;
+      color: #444;
+      padding: 6px 10px;
+      border: 1px solid #e5e5e5;
+      border-radius: 999px;
+      background: #fafafa;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .status.err {
+      color: #8a1f1f;
+      border-color: #f0c2c2;
+      background: #fff5f5;
+    }
+
     .right img {
       max-width: 100%;
       max-height: 90vh;
@@ -93,6 +113,7 @@
       width: auto;
       border-radius: 10px;
       border: 1px solid #e5e5e5;
+      background: #fff;
     }
   </style>
 </head>
@@ -109,6 +130,7 @@
 
       <div class="imgbox">
         <img id="resultImg" src="1.jpg" alt="Result" />
+        <div id="status" class="status">Showing: 1.jpg</div>
       </div>
     </main>
 
@@ -118,36 +140,24 @@
   </div>
 
   <script>
-    // Normalize: lowercase + remove non-alphanumeric.
-    // "PIN_62" -> "pin62", "CN2-29" -> "cn229", "CN2 29" -> "cn229"
     function norm(s) {
       return String(s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
     }
 
-    // Build mapping list using the table order.
-    // Fixed per your rules:
-    // - DCLK/DLK/PIN_62/CN2-29 => 2.jpg
-    // - LS/PIN_66/CN2-31       => 3.jpg
-    // - GSP/PIN_67/CN2-32      => 4.jpg
-    // - LCDB10 onward          => 5.jpg, 6.jpg, ...
-    const entries = [];
+    // Lookup table: normalized_key -> image filename
+    const lookup = new Map();
 
     function add(img, keys) {
       for (const k of keys) lookup.set(norm(k), img);
     }
 
-    const lookup = new Map();
-
-    // Defaults are handled by falling back to 1.jpg.
-
-    // Header section
+    // Fixed per your rules:
     add("2.jpg", ["DLK","DCLK","PIN_62","CN2-29"]);
     add("3.jpg", ["LS","PIN_66","CN2-31"]);
     add("4.jpg", ["GSP","PIN_67","CN2-32"]);
 
     // Sequential rows (start at 5.jpg)
     const seq = [
-      // Lower screen (下画面)
       ["LCDB10", "PIN_44", "CN2-15"],
       ["LCDB11", "PIN_47", "CN2-16"],
       ["LCDB12", "PIN_48", "CN2-17"],
@@ -167,7 +177,6 @@
       ["LCDG14", "PIN_74", "CN2-39"],
       ["LCDG15", "PIN_75", "CN2-40"],
 
-      // Upper screen (上画面)
       ["LCDB20", "PIN_99", "CN1-23"],
       ["LCDB21", "PIN_98", "CN1-24"],
       ["LCDB22", "PIN_97", "CN1-25"],
@@ -187,7 +196,6 @@
       ["LCDG24", "PIN_77", "CN1-39"],
       ["LCDG25", "PIN_76", "CN1-40"],
 
-      // Audio (オーディオ)
       ["SND_MCLK", "PIN_64", "CN2-30"],
       ["SND_SDO",  "PIN_61", "CN2-28"],
       ["SND_WS",   "PIN_58", "CN2-27"],
@@ -197,23 +205,39 @@
     let imgNum = 5;
     for (const [label, pin, cn] of seq) {
       const img = `${imgNum}.jpg`;
-
-      // Allow multiple input styles:
-      // - label: "lcdb10"
-      // - pin: "pin_44", "pin44"
-      // - cn: "cn2-15", "cn2 15", "cn215"
-      add(img, [label, pin, cn, pin.replace(/_/g,""), cn.replace(/[- ]/g,"")]);
-
+      add(img, [
+        label,
+        pin,                 // PIN_44
+        pin.replace(/_/g,""),// PIN44
+        cn,                  // CN2-15
+        cn.replace(/[- ]/g,"")// CN215
+      ]);
       imgNum++;
     }
 
     const input = document.getElementById("q");
     const resultImg = document.getElementById("resultImg");
+    const status = document.getElementById("status");
+
+    function setStatus(text, isErr) {
+      status.textContent = text;
+      status.classList.toggle("err", !!isErr);
+    }
+
+    // If an image filename doesn't exist, show it clearly and fall back.
+    resultImg.addEventListener("error", () => {
+      const attempted = resultImg.getAttribute("data-attempted") || resultImg.src;
+      setStatus(`Missing file: ${attempted} (check repo filenames)`, true);
+      resultImg.src = "1.jpg";
+      resultImg.setAttribute("data-attempted", "");
+    });
 
     function update() {
       const key = norm(input.value);
       const img = lookup.get(key) || "1.jpg";
+      resultImg.setAttribute("data-attempted", img);
       resultImg.src = img;
+      setStatus(`Showing: ${img}`, false);
     }
 
     input.addEventListener("input", update);
