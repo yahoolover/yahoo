@@ -94,13 +94,6 @@
       border-radius: 10px;
       border: 1px solid #e5e5e5;
     }
-
-    .small {
-      font-size: 11px;
-      color: #777;
-      margin-top: 6px;
-      text-align: center;
-    }
   </style>
 </head>
 <body>
@@ -110,7 +103,7 @@
         <label for="q">Type solder point here:</label>
         <input id="q" type="text" placeholder="Type solder point here" autocomplete="off" />
         <div class="hint">
-          Not case sensitive. "_" and "-" are optional.
+          Not case sensitive. "_" and "-" are optional (e.g. CN2-29, CN2 29, CN229 all work).
         </div>
       </div>
 
@@ -125,17 +118,94 @@
   </div>
 
   <script>
+    // Normalize: lowercase + remove non-alphanumeric.
+    // "PIN_62" -> "pin62", "CN2-29" -> "cn229", "CN2 29" -> "cn229"
     function norm(s) {
-      return String(s || "")
-        .toLowerCase()
-        .replace(/[^a-z0-9]/g, "");
+      return String(s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
     }
 
-    const lookup = new Map([
-      ["dlk","2.jpg"],["dclk","2.jpg"],["pin62","2.jpg"],["cn229","2.jpg"],
-      ["ls","3.jpg"],["pin66","3.jpg"],["cn231","3.jpg"],
-      ["gsp","4.jpg"],["pin67","4.jpg"],["cn232","4.jpg"]
-    ]);
+    // Build mapping list using the table order.
+    // Fixed per your rules:
+    // - DCLK/DLK/PIN_62/CN2-29 => 2.jpg
+    // - LS/PIN_66/CN2-31       => 3.jpg
+    // - GSP/PIN_67/CN2-32      => 4.jpg
+    // - LCDB10 onward          => 5.jpg, 6.jpg, ...
+    const entries = [];
+
+    function add(img, keys) {
+      for (const k of keys) lookup.set(norm(k), img);
+    }
+
+    const lookup = new Map();
+
+    // Defaults are handled by falling back to 1.jpg.
+
+    // Header section
+    add("2.jpg", ["DLK","DCLK","PIN_62","CN2-29"]);
+    add("3.jpg", ["LS","PIN_66","CN2-31"]);
+    add("4.jpg", ["GSP","PIN_67","CN2-32"]);
+
+    // Sequential rows (start at 5.jpg)
+    const seq = [
+      // Lower screen (下画面)
+      ["LCDB10", "PIN_44", "CN2-15"],
+      ["LCDB11", "PIN_47", "CN2-16"],
+      ["LCDB12", "PIN_48", "CN2-17"],
+      ["LCDB13", "PIN_49", "CN2-18"],
+      ["LCDB14", "PIN_50", "CN2-19"],
+      ["LCDB15", "PIN_51", "CN2-20"],
+      ["LCDR10", "PIN_52", "CN2-21"],
+      ["LCDR11", "PIN_53", "CN2-22"],
+      ["LCDR12", "PIN_54", "CN2-23"],
+      ["LCDR13", "PIN_55", "CN2-24"],
+      ["LCDR14", "PIN_56", "CN2-25"],
+      ["LCDR15", "PIN_57", "CN2-26"],
+      ["LCDG10", "PIN_70", "CN2-35"],
+      ["LCDG11", "PIN_71", "CN2-36"],
+      ["LCDG12", "PIN_72", "CN2-37"],
+      ["LCDG13", "PIN_73", "CN2-38"],
+      ["LCDG14", "PIN_74", "CN2-39"],
+      ["LCDG15", "PIN_75", "CN2-40"],
+
+      // Upper screen (上画面)
+      ["LCDB20", "PIN_99", "CN1-23"],
+      ["LCDB21", "PIN_98", "CN1-24"],
+      ["LCDB22", "PIN_97", "CN1-25"],
+      ["LCDB23", "PIN_96", "CN1-26"],
+      ["LCDB24", "PIN_95", "CN1-27"],
+      ["LCDB25", "PIN_92", "CN1-28"],
+      ["LCDR20", "PIN_91", "CN1-29"],
+      ["LCDR21", "PIN_89", "CN1-30"],
+      ["LCDR22", "PIN_87", "CN1-31"],
+      ["LCDR23", "PIN_86", "CN1-32"],
+      ["LCDR24", "PIN_85", "CN1-33"],
+      ["LCDR25", "PIN_84", "CN1-34"],
+      ["LCDG20", "PIN_83", "CN1-35"],
+      ["LCDG21", "PIN_82", "CN1-36"],
+      ["LCDG22", "PIN_81", "CN1-37"],
+      ["LCDG23", "PIN_78", "CN1-38"],
+      ["LCDG24", "PIN_77", "CN1-39"],
+      ["LCDG25", "PIN_76", "CN1-40"],
+
+      // Audio (オーディオ)
+      ["SND_MCLK", "PIN_64", "CN2-30"],
+      ["SND_SDO",  "PIN_61", "CN2-28"],
+      ["SND_WS",   "PIN_58", "CN2-27"],
+      ["TOSLINK",  "PIN_41", "CN2-12"]
+    ];
+
+    let imgNum = 5;
+    for (const [label, pin, cn] of seq) {
+      const img = `${imgNum}.jpg`;
+
+      // Allow multiple input styles:
+      // - label: "lcdb10"
+      // - pin: "pin_44", "pin44"
+      // - cn: "cn2-15", "cn2 15", "cn215"
+      add(img, [label, pin, cn, pin.replace(/_/g,""), cn.replace(/[- ]/g,"")]);
+
+      imgNum++;
+    }
 
     const input = document.getElementById("q");
     const resultImg = document.getElementById("resultImg");
@@ -147,6 +217,7 @@
     }
 
     input.addEventListener("input", update);
+    update();
   </script>
 </body>
 </html>
