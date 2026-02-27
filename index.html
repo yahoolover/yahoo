@@ -5,93 +5,122 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Pin → Image Lookup</title>
   <style>
-    :root { --gap: 16px; }
-    body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+    :root { --gap: 14px; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      overflow-x: hidden;
+    }
+
     .wrap {
       display: flex;
       gap: var(--gap);
       padding: var(--gap);
-      align-items: flex-start;
+      height: 100vh;
+      box-sizing: border-box;
     }
-    .left { flex: 1; min-width: 320px; }
+
+    .left {
+      flex: 1;
+      min-width: 280px;
+      display: flex;
+      flex-direction: column;
+    }
+
     .right {
-      width: min(420px, 42vw);
-      position: sticky;
-      top: var(--gap);
-      align-self: flex-start;
+      width: 32vw;
+      max-width: 380px;
       border-left: 1px solid #e5e5e5;
       padding-left: var(--gap);
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
+
     .card {
       border: 1px solid #e5e5e5;
       border-radius: 12px;
-      padding: 14px;
+      padding: 12px;
       margin-bottom: var(--gap);
     }
-    label { display: block; font-weight: 600; margin-bottom: 8px; }
+
+    label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 6px;
+      font-size: 15px;
+    }
+
     input[type="text"] {
       width: 100%;
       box-sizing: border-box;
-      padding: 12px 12px;
-      font-size: 16px;
+      padding: 10px;
+      font-size: 15px;
       border: 1px solid #cfcfcf;
-      border-radius: 10px;
+      border-radius: 8px;
       outline: none;
     }
-    input[type="text"]:focus { border-color: #6b6b6b; }
-    .hint { color: #666; font-size: 13px; margin-top: 8px; line-height: 1.35; }
 
-    /* Smaller result image */
+    .hint {
+      color: #666;
+      font-size: 12px;
+      margin-top: 6px;
+    }
+
+    /* Result image fits screen */
+    .imgbox {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
     .imgbox img {
-      width: 70%;
-      max-width: 550px;
+      max-width: 100%;
+      max-height: 75vh;
       height: auto;
-      display: block;
-      margin: 0 auto;
-      border-radius: 12px;
+      width: auto;
+      border-radius: 10px;
       border: 1px solid #e5e5e5;
-      background: #fff;
     }
 
-    /* Smaller chart image */
+    /* Chart image fits screen */
     .right img {
-      width: 80%;
-      max-width: 480px;
+      max-width: 100%;
+      max-height: 90vh;
       height: auto;
-      display: block;
-      margin: 0 auto;
-      border-radius: 12px;
+      width: auto;
+      border-radius: 10px;
       border: 1px solid #e5e5e5;
-      background: #fff;
     }
 
-    .small { font-size: 12px; color: #777; margin-top: 10px; }
-    code { background: #f6f6f6; padding: 2px 6px; border-radius: 6px; }
+    .small {
+      font-size: 11px;
+      color: #777;
+      margin-top: 6px;
+      text-align: center;
+    }
   </style>
 </head>
 <body>
   <div class="wrap">
     <main class="left">
       <div class="card">
-        <label for="q">Type anything (DSi label, MAX2 pin, or Chameleon USB CN):</label>
-        <input id="q" type="text" placeholder="e.g. dlk, pin_62, cn2-29, cn2 29, cn229" autocomplete="off" />
+        <label for="q">Type solder point here:</label>
+        <input id="q" type="text" placeholder="Type solder point here" autocomplete="off" />
         <div class="hint">
-          Matching is <b>not case sensitive</b>. Symbols like <code>_</code> and <code>-</code> can be omitted or replaced by spaces.<br>
-          If nothing matches, you’ll see <code>1.jpg</code>.
+          Not case sensitive. "_" and "-" are optional.
         </div>
       </div>
 
       <div class="imgbox">
         <img id="resultImg" src="1.jpg" alt="Result" />
-        <div class="small" id="debugLine"></div>
       </div>
     </main>
 
     <aside class="right">
       <img src="偽トロi配線.png" alt="Wiring chart (reference)" />
-      <div class="small">
-        This chart stays on the right for constant reference.
-      </div>
     </aside>
   </div>
 
@@ -110,20 +139,14 @@
 
     const input = document.getElementById("q");
     const resultImg = document.getElementById("resultImg");
-    const debugLine = document.getElementById("debugLine");
 
     function update() {
-      const raw = input.value;
-      const key = norm(raw);
+      const key = norm(input.value);
       const img = lookup.get(key) || "1.jpg";
       resultImg.src = img;
-      debugLine.textContent = raw.trim()
-        ? `Normalized: "${key}" → ${img}`
-        : `Showing default: 1.jpg`;
     }
 
     input.addEventListener("input", update);
-    update();
   </script>
 </body>
 </html>
