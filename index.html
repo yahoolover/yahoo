@@ -40,22 +40,31 @@
     }
     input[type="text"]:focus { border-color: #6b6b6b; }
     .hint { color: #666; font-size: 13px; margin-top: 8px; line-height: 1.35; }
+
+    /* Smaller result image */
     .imgbox img {
-      width: 100%;
+      width: 70%;
+      max-width: 550px;
       height: auto;
       display: block;
+      margin: 0 auto;
       border-radius: 12px;
       border: 1px solid #e5e5e5;
       background: #fff;
     }
+
+    /* Smaller chart image */
     .right img {
-      width: 100%;
+      width: 80%;
+      max-width: 480px;
       height: auto;
       display: block;
+      margin: 0 auto;
       border-radius: 12px;
       border: 1px solid #e5e5e5;
       background: #fff;
     }
+
     .small { font-size: 12px; color: #777; margin-top: 10px; }
     code { background: #f6f6f6; padding: 2px 6px; border-radius: 6px; }
   </style>
@@ -79,7 +88,6 @@
     </main>
 
     <aside class="right">
-      <!-- Put your chart image in the same folder as this HTML. -->
       <img src="偽トロi配線.png" alt="Wiring chart (reference)" />
       <div class="small">
         This chart stays on the right for constant reference.
@@ -88,110 +96,17 @@
   </div>
 
   <script>
-    // Normalize: lowercase + remove anything that's not a-z or 0-9.
-    // Examples: "PIN_62" -> "pin62", "CN2-29" -> "cn229", "CN2 29" -> "cn229"
     function norm(s) {
       return String(s || "")
         .toLowerCase()
         .replace(/[^a-z0-9]/g, "");
     }
 
-    // Helper to expand common variants automatically.
-    function makeKeys(label, pin, cn) {
-      const keys = [];
-      if (label) keys.push(label);
-      if (pin) keys.push(pin, "pin" + pin.replace(/[^0-9]/g, "")); // allow "62" in "PIN_62" forms
-      if (cn)  keys.push(cn);
-
-      // Also allow users to type without the "PIN" / "CN" prefix (optional convenience):
-      // - "62" won't be mapped by default (too collision-prone), but "pin62" is.
-      // - For CN, "cn229" is already covered by normalization.
-      return keys.filter(Boolean);
-    }
-
-    // Build mapping list.
-    // Your requested special cases:
-    // - Random/unmatched -> 1.jpg (handled as default)
-    // - "DLK" / "PIN_62" / "CN2-29" -> 2.jpg
-    // - "LS" / "PIN_66" / "CN2-31" -> 3.jpg
-    // - "GSP" / "PIN_67" / "CN2-32" -> 3.jpg
-    //
-    // Then "and so on": below, everything after that is assigned sequentially:
-    // LCDB10 -> 4.jpg, LCDB11 -> 5.jpg, ... up through the bottom rows.
-    const entries = [];
-
-    // 2.jpg
-    entries.push({ img: "2.jpg", keys: ["DLK", "DCLK", "PIN_62", "CN2-29"] });
-
-    // 3.jpg
-    entries.push({ img: "3.jpg", keys: ["LS",  "PIN_66", "CN2-31"] });
-    entries.push({ img: "3.jpg", keys: ["GSP", "PIN_67", "CN2-32"] });
-
-    // Sequential rows (4.jpg ... 43.jpg)
-    const seq = [
-      // Lower screen (下画面)
-      ["LCDB10", "PIN_44", "CN2-15"],
-      ["LCDB11", "PIN_47", "CN2-16"],
-      ["LCDB12", "PIN_48", "CN2-17"],
-      ["LCDB13", "PIN_49", "CN2-18"],
-      ["LCDB14", "PIN_50", "CN2-19"],
-      ["LCDB15", "PIN_51", "CN2-20"],
-      ["LCDR10", "PIN_52", "CN2-21"],
-      ["LCDR11", "PIN_53", "CN2-22"],
-      ["LCDR12", "PIN_54", "CN2-23"],
-      ["LCDR13", "PIN_55", "CN2-24"],
-      ["LCDR14", "PIN_56", "CN2-25"],
-      ["LCDR15", "PIN_57", "CN2-26"],
-      ["LCDG10", "PIN_70", "CN2-35"],
-      ["LCDG11", "PIN_71", "CN2-36"],
-      ["LCDG12", "PIN_72", "CN2-37"],
-      ["LCDG13", "PIN_73", "CN2-38"],
-      ["LCDG14", "PIN_74", "CN2-39"],
-      ["LCDG15", "PIN_75", "CN2-40"],
-
-      // Upper screen (上画面)
-      ["LCDB20", "PIN_99", "CN1-23"],
-      ["LCDB21", "PIN_98", "CN1-24"],
-      ["LCDB22", "PIN_97", "CN1-25"],
-      ["LCDB23", "PIN_96", "CN1-26"],
-      ["LCDB24", "PIN_95", "CN1-27"],
-      ["LCDB25", "PIN_92", "CN1-28"],
-      ["LCDR20", "PIN_91", "CN1-29"],
-      ["LCDR21", "PIN_89", "CN1-30"],
-      ["LCDR22", "PIN_87", "CN1-31"],
-      ["LCDR23", "PIN_86", "CN1-32"],
-      ["LCDR24", "PIN_85", "CN1-33"],
-      ["LCDR25", "PIN_84", "CN1-34"],
-      ["LCDG20", "PIN_83", "CN1-35"],
-      ["LCDG21", "PIN_82", "CN1-36"],
-      ["LCDG22", "PIN_81", "CN1-37"],
-      ["LCDG23", "PIN_78", "CN1-38"],
-      ["LCDG24", "PIN_77", "CN1-39"],
-      ["LCDG25", "PIN_76", "CN1-40"],
-
-      // Audio (オーディオ)
-      ["SND_MCLK", "PIN_64", "CN2-30"],
-      ["SND_SDO",  "PIN_61", "CN2-28"],
-      ["SND_WS",   "PIN_58", "CN2-27"],
-      ["TOSLINK",  "PIN_41", "CN2-12"], // chart note suggests CN2-12 is for TOSLINK
-    ];
-
-    let imgNum = 4;
-    for (const [label, pin, cn] of seq) {
-      entries.push({
-        img: `${imgNum}.jpg`,
-        keys: makeKeys(label, pin, cn)
-      });
-      imgNum++;
-    }
-
-    // Build normalized lookup table
-    const lookup = new Map();
-    for (const e of entries) {
-      for (const k of e.keys) {
-        lookup.set(norm(k), e.img);
-      }
-    }
+    const lookup = new Map([
+      ["dlk","2.jpg"],["dclk","2.jpg"],["pin62","2.jpg"],["cn229","2.jpg"],
+      ["ls","3.jpg"],["pin66","3.jpg"],["cn231","3.jpg"],
+      ["gsp","3.jpg"],["pin67","3.jpg"],["cn232","3.jpg"]
+    ]);
 
     const input = document.getElementById("q");
     const resultImg = document.getElementById("resultImg");
@@ -202,8 +117,6 @@
       const key = norm(raw);
       const img = lookup.get(key) || "1.jpg";
       resultImg.src = img;
-
-      // optional tiny status line
       debugLine.textContent = raw.trim()
         ? `Normalized: "${key}" → ${img}`
         : `Showing default: 1.jpg`;
